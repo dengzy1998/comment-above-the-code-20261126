@@ -54,9 +54,22 @@ OUTPUT_PATH = os.path.join("/output", "entry.txt")
 
 
 def main() -> None:
+    # Length guard: the competition caps an entry at 200 characters, and
+    # this one is a single line, so it must contain no newline either.
+    if len(ENTRY) > 200:
+        raise ValueError(f"entry too long: {len(ENTRY)} chars (limit 200)")
+    if "\n" in ENTRY:
+        raise ValueError("entry must be a single line")
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         f.write(ENTRY)
+    # Output validation: read the file back as raw bytes and confirm it is
+    # exactly the entry encoded as UTF-8 — no trailing newline, no drift.
+    with open(OUTPUT_PATH, "rb") as f:
+        written = f.read()
+    if written != ENTRY.encode("utf-8"):
+        raise OSError(f"output mismatch: wrote {len(written)} bytes, "
+                      f"expected {len(ENTRY.encode('utf-8'))}")
 
 
 if __name__ == "__main__":
